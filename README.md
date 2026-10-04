@@ -57,28 +57,27 @@
      on, and if you don't decide it here you'll discover it as a crash in
      Milestone 5. -->
 
+
 ### `search_listings`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Searches data/listings.json for listings that match a description, an optional size, and an optional price ceiling.
+- **Inputs:** `description` (str), `size` (str or None), `max_price` (float or None)
+- **Returns:** A list of listing dicts, each with id, title, description, category, style_tags, size, condition, price, colors, brand, and platform. Ordered best match first.
+- **When it has nothing:** Returns an empty list `[]`, never None.
 
 ### `suggest_outfit`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Takes one found listing and the user's wardrobe and suggests outfits pairing the new item with items they already own.
+- **Inputs:** `new_item` (dict, one listing), `wardrobe` (dict with an "items" list of wardrobe item dicts)
+- **Returns:** A string of outfit ideas that names specific wardrobe items.
+- **When it has nothing:** If the wardrobe is empty, returns a string of general styling advice for the item, not an error.
 
 ### `create_fit_card`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
-
----
+- **What it does:** Writes a short caption someone would post about the new item and its outfit.
+- **Inputs:** `outfit` (str, the output of suggest_outfit), `new_item` (dict, one listing)
+- **Returns:** A string caption, 1 to 3 sentences.
+- **When it has nothing:** If `outfit` is empty or None, returns a caption built from `new_item` alone.
 
 ## Planning Loop
 
@@ -93,7 +92,7 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:** If search_listings returns an empty list, set session["error"] to a message naming what to change (raise the price, drop the size, or use a broader description) and stop without calling suggest_outfit or create_fit_card. Otherwise, store the first result in session["selected_item"] and continue to suggest_outfit.
 
 **Where it lives:** `agent.py::run_agent`
 
