@@ -25,9 +25,7 @@ Given a query that matches at least one listing, the agent completes all three
 tool calls and returns a fit card — in at least 4 of 5 tries.
 
 **Why this target:**
-<!-- Why 4 of 5 and not 5 of 5? Something about your search, probably —
-     "my search is a plain keyword match and some phrasings will miss" is a
-     real answer. -->
+Even when search finds a listing, the next two tools depend on model calls that may fail because of a temporary API error or rate limit. A target of 4 of 5 allows one failed run while still requiring the full process to work consistently.
 
 ---
 
@@ -37,65 +35,41 @@ Given a query that matches no listings, the agent stops before calling
 `suggest_outfit` and returns a message naming what to change — 5 of 5 tries.
 
 **Why this target:**
-<!-- Why is 5 of 5 reasonable here when criterion 1 isn't? What's different
-     about this path? -->
+No model call is needed on the empty-search path. The loop checks an empty list, so it should stop every time and tell the user to change their description, size, or price limit.
 
 ---
 
 ## 3. Something about state
+Using the first five queries displayed by python app.py examples that match at least one listing, the item ID in session["selected_item"] matches the new_item["id"] logged inside suggest_outfit — in 5 of 5 runs, without asking the user to enter the item again.
 
-<!-- YOU WRITE THIS ONE.
 
-     How would you know that the item your search found is the same item the
-     next tool received? Name something countable or observable.
-
-     This is the criterion people find hardest, because state failure doesn't
-     look like state failure — it looks like a tool problem. Something that
-     compares session["selected_item"] against what actually reached
-     suggest_outfit is the shape you're after. -->
 
 
 
 **Why this target:**
-
+The loop passes existing data between tools, so the item ID should match every time. A mismatch could produce outfit suggestions for the wrong item.
 
 
 ---
 
 ## 4. Something about the fit card
 
-<!-- YOU WRITE THIS ONE.
-
-     The fit card calls a model, so the same input can produce different words
-     each time. That's not a bug — it's the nature of the tool. So what would
-     make it acceptable?
-
-     Think about what you'd actually be unhappy to see. A caption that never
-     mentions the price? Two different items producing the same opening
-     sentence? A card longer than a caption anyone would post? Any of those can
-     be turned into a number. -->
-
+Generate one uncached fit card for each of the first five listings in data/listings.json, using the outfit returned by suggest_outfit for that listing and the provided wardrobe. At least 4 of 5 captions must include the listing’s brand when it is nonempty; otherwise, they must include a title word with at least four letters, excluding “vintage.” Comparisons ignore capitalization and punctuation. Each passing caption must also contain the correct price with a dollar sign, either without decimal places for a whole-dollar price or with exactly two decimal places, and contain between 1 and 60 whitespace-separated words. For example, a price of 24.0 accepts $24 or $24.00, but not “24 bucks.”
 
 
 **Why this target:**
-
+Identifying details and an explicit price make the caption useful, while the word limit keeps it short enough to post. Because model responses vary and may occasionally miss an instruction, the target allows one caption to fail rather than requiring all five to pass.
 
 
 ---
 
 ## 5. Your choice
 
-<!-- YOU WRITE THIS ONE TOO.
-
-     Pick something you actually care about getting right. Speed, the empty
-     wardrobe path, what happens when the model can't be reached, whether the
-     search respects a price ceiling — anything, as long as it names a number
-     or an observable outcome. -->
-
+For five calls to search_listings using the description "tee", no size restriction, and max_price values of $10, $20, $30, $40, and $50, every returned listing costs less than or equal to its requested limit, and at least three calls return a nonempty list.
 
 
 **Why this target:**
-
+Price filtering is a numeric comparison on existing data, so it should be exact in all five calls. Requiring at least three nonempty results prevents a search that always returns an empty list from passing.
 
 
 ---
