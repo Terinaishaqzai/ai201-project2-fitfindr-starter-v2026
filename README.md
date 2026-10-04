@@ -128,7 +128,13 @@ $ python -c "from tools import search_listings; print([(l['title'], l['price']) 
 ```
 
 ```
-$ python -c "from tools import suggest_outfit; ..."
+$ python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
+[suggest_outfit] new_item id = lst_001
+**Outfit 1: Casual Streetwear**
+Pair the vintage Levi's 501 Jeans with the white ribbed tank top, black cropped zip hoodie, chunky white sneakers, and black crossbody bag. Cinch the waist with the brown leather belt for a polished contrast.
+
+**Outfit 2: Cozy Retro**
+Style the vintage Levi's 501 Jeans with the oversized grey crewneck sweatshirt and chunky white sneakers. Add the brown leather belt to define the waist, and layer the vintage black denim jacket on top for a classic, textured finish.
 
 ```
 

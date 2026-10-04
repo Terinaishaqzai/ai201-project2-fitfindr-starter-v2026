@@ -19,7 +19,9 @@ type, exactly what it returns, and what it returns when it has nothing to give.
 That last line is what your loop branches on. "Returns a list" earns nothing —
 the description has to say what is *in* the list.
 """
-import re
+
+import re 
+import sys
 import config  # noqa: F401 — you'll use this in search_listings
 from generate import generate
 from utils.data_loader import load_listings
@@ -148,8 +150,39 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
     """
-    # TODO: replace this with your implementation
-    return ""
+    # Criterion 3 reads this line: the id that actually reached the tool.
+    print(f"[suggest_outfit] new_item id = {new_item.get('id')}", file=sys.stderr)
+
+    items = (wardrobe or {}).get("items") or []
+    item_summary = (
+        f"{new_item['title']} (${new_item['price']:.2f} on {new_item['platform']}). "
+        f"Category: {new_item['category']}. Colors: {', '.join(new_item['colors'])}. "
+        f"Style tags: {', '.join(new_item['style_tags'])}."
+    )
+
+    if not items:
+        prompt = (
+            f"Someone is thinking of buying this thrifted piece:\n{item_summary}\n\n"
+            "They haven't told us what they own. Give general styling advice: "
+            "one or two outfit ideas using common basics (for example jeans, "
+            "white sneakers, a plain tee). Keep it under 120 words."
+        )
+    else:
+        wardrobe_lines = "\n".join(
+            f"- {w['name']} ({w['category']}; {', '.join(w['colors'])}; "
+            f"{', '.join(w['style_tags'])})"
+            for w in items
+        )
+        prompt = (
+            f"Someone is thinking of buying this thrifted piece:\n{item_summary}\n\n"
+            f"Here is what they already own:\n{wardrobe_lines}\n\n"
+            "Suggest one or two outfits that pair the new piece with items "
+            "from their wardrobe. Name the wardrobe pieces exactly as listed. "
+            "Keep it under 120 words."
+        )
+
+    outfit = generate(prompt)
+    return outfit or "Pair it with simple basics, like straight-leg jeans and clean sneakers."
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
