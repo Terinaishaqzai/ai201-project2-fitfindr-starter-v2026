@@ -151,6 +151,17 @@ Pair the vintage Levi's 501 Jeans with the white ribbed tank top, black cropped 
 Style the vintage Levi's 501 Jeans with the oversized grey crewneck sweatshirt and chunky white sneakers. Add the brown leather belt to define the waist, and layer the vintage black denim jacket on top for a classic, textured finish.
 
 ```
+**Empty wardrobe test**
+
+```text
+$ python -c "from tools import suggest_outfit; from utils.data_loader import load_listings; print(suggest_outfit(load_listings()[0], {'items': []}))"
+[suggest_outfit] new_item id = lst_001
+These vintage Levi's 501s are a versatile closet staple. Here are two easy ways to style them:
+
+**1. The Casual Classic:** Pair the jeans with a tucked-in plain white t-shirt and white canvas sneakers. Add a simple leather belt and a tote bag for an effortless, everyday look that never goes out of style.
+
+**2. Elevated Streetwear:** Layer an oversized black hoodie or a cropped cardigan over the tee, and swap the sneakers for chunky loafers or retro runners. Accessorize with silver jewelry or a baseball cap to lean into the vintage streetwear vibe.
+```
 
 ```
 $ AI201_CACHE=0 python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
