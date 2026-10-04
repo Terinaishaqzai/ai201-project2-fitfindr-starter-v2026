@@ -60,9 +60,10 @@
 
 ### `search_listings`
 
-- **What it does:** Searches data/listings.json for listings that match a description, an optional size, and an optional price ceiling.
-- **Inputs:** `description` (str), `size` (str or None), `max_price` (float or None)
-- **Returns:** A list of listing dicts, each with id, title, description, category, style_tags, size, condition, price, colors, brand, and platform. Ordered best match first.
+
+- **What it does:** Searches data/listings.json for listings matching a description, an optional size, and an optional price ceiling.
+- **Inputs:** `description` (str), `size` (str or None), `max_price` (float or None, inclusive)
+- **Returns:** A list of listing dicts (id, title, description, category, style_tags, size, condition, price, colors, brand, platform), best match first, at most config.SEARCH_RESULT_LIMIT items. Ranking is keyword overlap with the title, description, category, brand, style tags and colors, with title matches counted twice. Ties go to the cheaper listing. Plurals are stripped ("tees" matches "tee"). A size matches when every token of the requested size appears as a whole token in the listing's size, case-insensitive, so "M" matches "S/M" and "M/L" but not "XL".
 - **When it has nothing:** Returns an empty list `[]`, never None.
 
 ### `suggest_outfit`
@@ -76,8 +77,10 @@
 
 - **What it does:** Writes a short caption someone would post about the new item and its outfit.
 - **Inputs:** `outfit` (str, the output of suggest_outfit), `new_item` (dict, one listing)
-- **Returns:** A string caption, 1 to 3 sentences.
-- **When it has nothing:** If `outfit` is empty or None, returns a caption built from `new_item` alone.
+- **Returns:** A string caption, 2 to 4 sentences, that mentions the item, its price and its platform.
+- **When it has nothing:** If `outfit` is empty or whitespace, returns a descriptive message string instead of raising.
+
+---
 
 ## Planning Loop
 
@@ -119,7 +122,8 @@ $ python app.py ask '...'
 **The three tools, tested one at a time**
 
 ```
-$ python -c "from tools import search_listings; print(search_listings('graphic tee', max_price=30))"
+$ python -c "from tools import search_listings; print([(l['title'], l['price']) for l in search_listings('graphic tee', max_price=30)])"
+[('Graphic Tee — 2003 Tour Bootleg Style', 24.0), ('Y2K Baby Tee — Butterfly Print', 18.0), ('Vintage Band Tee — Faded Grey', 19.0), ('Mesh Long-Sleeve Top — Black', 15.0), ('Vintage Graphic Hoodie — Faded Black', 26.0), ('Oversized Crewneck Sweatshirt — Vintage Navy', 20.0), ('Low-Rise Cargo Pants — Khaki', 27.0)]
 
 ```
 
