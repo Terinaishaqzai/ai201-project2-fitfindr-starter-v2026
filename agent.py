@@ -14,6 +14,7 @@ Build and test your three tools in `tools.py` first. Then come here.
 """
 
 import config
+import re
 import trace
 from tools import search_listings, suggest_outfit, create_fit_card
 from generate import ModelUnavailable
@@ -48,6 +49,27 @@ def new_session(query: str, wardrobe: dict) -> dict:
 
 
 # ── planning loop ─────────────────────────────────────────────────────────────
+def _parse_query(query: str) -> dict:
+    """Pull max_price and size out of the query with regex; the rest is the description."""
+    text = query
+    max_price = None
+    size = None
+
+    price_match = (
+        re.search(r"(?:under|below|less than|up to|max(?:imum)?|<=?)\s*\$?\s*(\d+(?:\.\d+)?)", text, re.I)
+        or re.search(r"\$\s*(\d+(?:\.\d+)?)", text)
+    )
+    if price_match:
+        max_price = float(price_match.group(1))
+        text = text.replace(price_match.group(0), " ")
+
+    size_match = re.search(r"\b(?:in\s+)?size\s+([a-z0-9/.]+)", text, re.I)
+    if size_match:
+        size = size_match.group(1)
+        text = text.replace(size_match.group(0), " ")
+
+    description = re.sub(r"\s+", " ", text).strip(" ,.")
+    return {"description": description, "size": size, "max_price": max_price}
 
 def run_agent(query: str, wardrobe: dict) -> dict:
     """
@@ -107,8 +129,48 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     """
     session = new_session(query, wardrobe)
 
-    # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
+    iterations = 0
+    step = "search"
+
+    while step != "done":
+        iterations += 1
+        trace.check_iterations(iterations)
+
+        if step == "search":
+            session["parsed"] = _parse_query(query)
+            parsed = session["parsed"]
+            session["search_results"] = search_listings(
+                parsed["description"], parsed["size"], parsed["max_price"]
+            )
+
+            # THE BRANCH: nothing came back, so stop before suggest_outfit.
+            if not session["search_results"]:
+                changes = ["use a broader description"]
+                if parsed["size"]:
+                    changes.insert(0, f"drop or change the size ({parsed['size']})")
+                if parsed["max_price"] is not None:
+                    changes.insert(0, f"raise the price limit (${parsed['max_price']:.0f})")
+                session["error"] = (
+                    f"No listings matched \"{parsed['description']}\". Try to "
+                    + ", or ".join(changes) + "."
+                )
+                return session
+
+            session["selected_item"] = session["search_results"][0]
+            step = "outfit"
+
+        elif step == "outfit":
+            session["outfit_suggestion"] = suggest_outfit(
+                session["selected_item"], session["wardrobe"]
+            )
+            step = "card"
+
+        elif step == "card":
+            session["fit_card"] = create_fit_card(
+                session["outfit_suggestion"], session["selected_item"]
+            )
+            step = "done"
+
     return session
 
 

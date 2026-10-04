@@ -39,8 +39,8 @@
 
 ## What This Does
 
-<!-- Three or four sentences: what a user asks for, and what they get back. -->
 
+FitFindr is a thrifting agent. The user types what they want, like "vintage graphic tee under $30", and the agent searches a listings file, picks the best match, suggests outfits that pair it with the user's wardrobe, and writes a short caption they could post. If nothing matches, it stops and tells the user what to change instead of calling the later tools.
 
 
 ---
@@ -99,9 +99,9 @@
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+**How the query is parsed:** Regex, in `_parse_query` in agent.py. A price phrase ("under $30") becomes `max_price`, "size M" becomes `size`, and the remaining words become the description.
 
-**What moves through the session:** <!-- which fields, in what order -->
+**What moves through the session:** `parsed`, then `search_results`, then `selected_item` (the first result), then `outfit_suggestion`, then `fit_card`. Each tool reads its input back out of the session. If the search is empty, `error` is set and the later fields stay None.
 
 ---
 
@@ -115,8 +115,22 @@
 **One full query**
 
 ```
-$ python app.py ask '...'
+$ python app.py ask 'vintage graphic tee under $30'
+[suggest_outfit] new_item id = lst_033
 
+  Found:    Vintage Band Tee — Faded Grey — $19.0 on depop
+
+  Outfit:   **Outfit 1: Effortless Grunge**
+Pair the vintage band tee with the baggy straight-leg jeans (dark wash) for a classic streetwear silhouette. Add the black combat boots to lean into the grunge aesthetic, and sling the black crossbody bag over your shoulder for easy everyday wear.
+
+**Outfit 2: Casual Contrast**
+Tuck the vintage band tee into the wide-leg khaki trousers for a mix of earth tones and edgy graphics. Cinch the waist with the brown leather belt, and finish the look with the chunky white sneakers for a relaxed, modern streetwear vibe.
+
+  Fit card: Scored this perfectly faded grey vintage band tee on depop for just $19. Paired it with dark baggy jeans and combat boots for an effortless grunge look today. Obsessed with how worn-in it feels.
+
+$ python app.py ask 'designer ballgown size XXS under $5'
+
+  No listings matched "designer ballgown". Try to raise the price limit ($5), or drop or change the size (XXS), or use a broader description.
 ```
 
 **The three tools, tested one at a time**
@@ -139,7 +153,11 @@ Style the vintage Levi's 501 Jeans with the oversized grey crewneck sweatshirt a
 ```
 
 ```
-$ python -c "from tools import create_fit_card; ..."
+$ AI201_CACHE=0 python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
+Pulled these Levi's 501 jeans off depop for $38 and honestly, the fit is everything. Threw them on with my beat-up white sneakers for that effortlessly lazy Sunday coffee run vibe. Absolute gold mine find.
+
+$ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('', load_listings()[0]))"
+No outfit suggestion was provided, so there is nothing to write a caption about yet.
 
 ```
 
@@ -156,15 +174,15 @@ $ python -c "from tools import create_fit_card; ..."
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* Help writing `search_listings`, including how to match sizes without a plain substring test.
+- *What came back:* Whole-token size matching and keyword scoring. When I tested "graphic tee", the Mesh Long-Sleeve Top ranked first, ahead of the real graphic tees.
+- *What I changed:* I added a bonus for words that match the title, re-ran the test, and the Graphic Tee moved to first.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* A `create_fit_card` that writes a caption mentioning the item, price and platform.
+- *What came back:* It worked, but running it twice gave word-for-word identical captions.
+- *What I changed:* I checked `config.py` and found `TEMPERATURE` was already 0.9, so the cause was the cache replaying identical prompts. I ran with `AI201_CACHE=0` and got three different captions.
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
