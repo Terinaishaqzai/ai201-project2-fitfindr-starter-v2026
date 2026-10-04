@@ -221,5 +221,26 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     Test it from a terminal before you move on:
         python -c "from tools import create_fit_card; from utils.data_loader import load_listings; print(create_fit_card('jeans and white sneakers', load_listings()[0]))"
     """
-    # TODO: replace this with your implementation
-    return ""
+    if not outfit or not outfit.strip():
+        return "No outfit suggestion was provided, so there is nothing to write a caption about yet."
+
+    price = new_item["price"]
+    price_text = f"${price:.0f}" if price == int(price) else f"${price:.2f}"
+    brand = new_item.get("brand")
+    name_line = f"{brand} {new_item['title']}" if brand else new_item["title"]
+
+    prompt = (
+        "Write a short social media caption about a thrift find, in the voice "
+        "of someone posting their own outfit. It should read like a real post, "
+        "not a product description.\n\n"
+        f"Item: {name_line}\n"
+        f"Price: {price_text}\n"
+        f"Platform: {new_item['platform']}\n"
+        f"Outfit idea: {outfit}\n\n"
+        "Rules: 2 to 4 sentences, under 55 words total. Mention the item "
+        f"by name, the exact price written as {price_text}, and the platform, "
+        "once each. Be specific about the vibe. No hashtags."
+    )
+
+    caption = generate(prompt)
+    return caption or f"Just found {new_item['title']} for {price_text} on {new_item['platform']}."
